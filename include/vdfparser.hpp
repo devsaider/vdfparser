@@ -102,14 +102,14 @@ public:
           VDFTokenizer  ();
           ~VDFTokenizer ();
     bool  HasMoreTokens ();
-    void  SetString     (char *str);
+    void  SetString     (const char *str);
 
 public:
     char  *token;
 
 private:
     size_t pos;
-    char  *source;
+    const char  *source;
 };
 
 typedef int (*PFN_VDFOPEN)          (int fwid, const char* filename, VDFTree* tree,
@@ -155,9 +155,10 @@ class VDFTreeParser
 public:
          VDFTreeParser  ();
          ~VDFTreeParser ();
-    static bool ParseVDF    (const char *filename, ParseForward *parseFW = NULL);
-    static bool OpenVDF     (const char *filename, VDFTree **vdfTree, OpenForward *openFW = NULL);
-    static bool SaveVDF     (const char *filename, VDFTree *vdfTree);
+    static bool ParseVDF       (const char *filename, ParseForward *parseFW = NULL);
+    static bool OpenVDF        (const char *filename, VDFTree **vdfTree, OpenForward *openFW = NULL);
+    static bool SaveVDF        (const char *filename, VDFTree *vdfTree);
+	static bool ReadFromMemory (const char *body, VDFTree **vdfTree, OpenForward *openFW = NULL);
 };
 
 

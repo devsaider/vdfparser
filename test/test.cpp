@@ -4,7 +4,7 @@
 int main()
 {
     VDFTree* tree = NULL;
-    if (not VDFTreeParser::OpenVDF("test.res", &tree)) {
+    if (!VDFTreeParser::ReadFromMemory("de_mirage\r\n{\"hello\" \"\"\r\n}\r\n", &tree)) {
         std::cerr << "Failed to open file " << std::endl;
         return 1;
     }

@@ -20,6 +20,8 @@
  *  @version    1.05a
  */
 
+#include <iostream>
+#include <sstream>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -763,7 +765,7 @@ bool VDFTokenizer::HasMoreTokens()
 /**
  *  Sets a new string to be parsed, resets token.
  */
-void VDFTokenizer::SetString(char *str)
+void VDFTokenizer::SetString(const char *str)
 {
     pos = 0;
     FinalizeArray(token);
@@ -913,125 +915,246 @@ bool VDFTreeParser::ParseVDF(const char *filename, ParseForward *pFW)
  */
 bool VDFTreeParser::OpenVDF(const char *filename, VDFTree **vdfTree, OpenForward *openFW)
 {
-    FILE     *pFile;
-    char     line[MAX_LINE_SIZE];
-    int      level;
-    int      argnum;
-    int      len;
-    bool     newChild;
-    int      retVal;
+	FILE     *pFile;
+	char     line[MAX_LINE_SIZE];
+	int      level;
+	int      argnum;
+	int      len;
+	bool     newChild;
+	int      retVal;
 
-    VDFNode  *parent;
-    VDFNode  *node;
-    VDFNode  *tmpNode;
-    VDFTokenizer tokenizer;
+	VDFNode  *parent;
+	VDFNode  *node;
+	VDFNode  *tmpNode;
+	VDFTokenizer tokenizer;
 
-    PFN_VDFOPEN pfnParse = NULL;
+	PFN_VDFOPEN pfnParse = NULL;
 
-    if(openFW != NULL)
-        pfnParse = openFW->pfnOpen;
+	if (openFW != NULL)
+		pfnParse = openFW->pfnOpen;
 
-    if(filename == NULL) {
-        return false;
-    }
+	if (filename == NULL) {
+		return false;
+	}
 
-    pFile = NULL;
-    if(!(pFile = fopen(filename, "r")))
-        return false;
+	pFile = NULL;
+	if (!(pFile = fopen(filename, "r")))
+		return false;
 
-    if(*vdfTree) {
-        delete(*vdfTree);
-        *vdfTree = NULL;
-    }
-    *vdfTree = new VDFTree;
+	if (*vdfTree) {
+		delete(*vdfTree);
+		*vdfTree = NULL;
+	}
+	*vdfTree = new VDFTree;
 
-    level  = 0;
-    argnum = 0;
-    newChild = false;
-    (*vdfTree)->CreateTree();
-    parent = NULL;
-    node   = (*vdfTree)->rootNode;
-    retVal = RETURN_TREEPARSER_CONTINUE;
+	level = 0;
+	argnum = 0;
+	newChild = false;
+	(*vdfTree)->CreateTree();
+	parent = NULL;
+	node = (*vdfTree)->rootNode;
+	retVal = RETURN_TREEPARSER_CONTINUE;
 
-    while(fgets(line, MAX_LINE_SIZE, pFile)) {
+	while (fgets(line, MAX_LINE_SIZE, pFile)) {
 
-        if(retVal == RETURN_TREEPARSER_SILENT)
-            pfnParse = NULL;
-        else if(retVal == RETURN_TREEPARSER_BREAK)
-            break;
+		if (retVal == RETURN_TREEPARSER_SILENT)
+			pfnParse = NULL;
+		else if (retVal == RETURN_TREEPARSER_BREAK)
+			break;
 
-        if(argnum == 1 && pfnParse != NULL)
-            (*pfnParse)(openFW->fwdid, openFW->mdFilename, *vdfTree, node, level);
+		if (argnum == 1 && pfnParse != NULL)
+			(*pfnParse)(openFW->fwdid, openFW->mdFilename, *vdfTree, node, level);
 
-        argnum = 0;
+		argnum = 0;
 
-        tokenizer.SetString(line);
+		tokenizer.SetString(line);
 
-        while(tokenizer.HasMoreTokens()) {
-            if((len = strlen(tokenizer.token))) {
-
-
-                // block comments
-                if(tokenizer.token[0] == '/' && tokenizer.token[1] == '/')
-                    break;
-
-                // open node
-                else if(!strcmp(tokenizer.token, "{")) {
-
-                    parent = node;
-                    node = (*vdfTree)->CreateNode();
-                    (*vdfTree)->AppendChild(parent, node);
-
-                    level++;
-                    argnum = 0;
-                    newChild = false;
-                }
-
-                // close node
-                else if(!strcmp(tokenizer.token, "}")) {
-
-                    if(level) {
-                        node = node->parentNode;
-                        parent = node->parentNode;
-                        level--;
-                        argnum = 0;
-                        newChild = true;
-                    }
-                }
-
-                else {
-                    if(!argnum) {
-                        if(newChild) {
-                            tmpNode = node;
-                            node = (*vdfTree)->CreateNode(parent);
-                            (*vdfTree)->AppendNode(tmpNode, node);
-                            newChild = false;
-                        }
-                        (*vdfTree)->SetKeyPair(node, tokenizer.token);
-                    }
-                    else {
-                        (*vdfTree)->SetKeyPair(node, NULL, tokenizer.token);
-                        newChild = true;
-                        if(pfnParse != NULL)
-                            retVal = (*pfnParse)(openFW->fwdid, openFW->mdFilename,
-                                                 *vdfTree, node, level);
-                    }
-                    argnum++;
-                }
-                if(argnum == 1)
-                    newChild = true;
-
-            }
-        }
-    }
-
-    if(argnum == 1 && pfnParse != NULL)
-        retVal = (*pfnParse)(openFW->fwdid, openFW->mdFilename, *vdfTree, node, level);
+		while (tokenizer.HasMoreTokens()) {
+			if ((len = strlen(tokenizer.token))) {
 
 
-    fclose(pFile);
+				// block comments
+				if (tokenizer.token[0] == '/' && tokenizer.token[1] == '/')
+					break;
 
-    return true;
+				// open node
+				else if (!strcmp(tokenizer.token, "{")) {
+
+					parent = node;
+					node = (*vdfTree)->CreateNode();
+					(*vdfTree)->AppendChild(parent, node);
+
+					level++;
+					argnum = 0;
+					newChild = false;
+				}
+
+				// close node
+				else if (!strcmp(tokenizer.token, "}")) {
+
+					if (level) {
+						node = node->parentNode;
+						parent = node->parentNode;
+						level--;
+						argnum = 0;
+						newChild = true;
+					}
+				}
+
+				else {
+					if (!argnum) {
+						if (newChild) {
+							tmpNode = node;
+							node = (*vdfTree)->CreateNode(parent);
+							(*vdfTree)->AppendNode(tmpNode, node);
+							newChild = false;
+						}
+						(*vdfTree)->SetKeyPair(node, tokenizer.token);
+					}
+					else {
+						(*vdfTree)->SetKeyPair(node, NULL, tokenizer.token);
+						newChild = true;
+						if (pfnParse != NULL)
+							retVal = (*pfnParse)(openFW->fwdid, openFW->mdFilename,
+								*vdfTree, node, level);
+					}
+					argnum++;
+				}
+				if (argnum == 1)
+					newChild = true;
+
+			}
+		}
+	}
+
+	if (argnum == 1 && pfnParse != NULL)
+		retVal = (*pfnParse)(openFW->fwdid, openFW->mdFilename, *vdfTree, node, level);
+
+
+	fclose(pFile);
+
+	return true;
+
+}
+
+
+/**
+ *  Read vdf file from memory
+ *
+ *  @param  body        VDF content
+ *  @param  vdfTree     The vdf tree will be built into this object.
+ *  @return             Returns true if succeeded.
+ */
+bool VDFTreeParser::ReadFromMemory(const char* body, VDFTree **vdfTree, OpenForward *openFW)
+{
+	std::istringstream iss(body);
+	std::string line;
+	int      level;
+	int      argnum;
+	int      len;
+	bool     newChild;
+	int      retVal;
+
+	VDFNode  *parent;
+	VDFNode  *node;
+	VDFNode  *tmpNode;
+	VDFTokenizer tokenizer;
+
+	PFN_VDFOPEN pfnParse = NULL;
+
+	if (openFW != NULL)
+		pfnParse = openFW->pfnOpen;
+
+	if (*vdfTree) {
+		delete(*vdfTree);
+		*vdfTree = NULL;
+	}
+	*vdfTree = new VDFTree;
+
+	level = 0;
+	argnum = 0;
+	newChild = false;
+	(*vdfTree)->CreateTree();
+	parent = NULL;
+	node = (*vdfTree)->rootNode;
+	retVal = RETURN_TREEPARSER_CONTINUE;
+
+	while (std::getline(iss, line)) {
+
+		if (retVal == RETURN_TREEPARSER_SILENT)
+			pfnParse = NULL;
+		else if (retVal == RETURN_TREEPARSER_BREAK)
+			break;
+
+		if (argnum == 1 && pfnParse != NULL)
+			(*pfnParse)(openFW->fwdid, openFW->mdFilename, *vdfTree, node, level);
+
+		argnum = 0;
+
+		tokenizer.SetString(line.c_str());
+
+		while (tokenizer.HasMoreTokens()) {
+			if ((len = strlen(tokenizer.token))) {
+
+
+				// block comments
+				if (tokenizer.token[0] == '/' && tokenizer.token[1] == '/')
+					break;
+
+				// open node
+				else if (!strcmp(tokenizer.token, "{")) {
+
+					parent = node;
+					node = (*vdfTree)->CreateNode();
+					(*vdfTree)->AppendChild(parent, node);
+
+					level++;
+					argnum = 0;
+					newChild = false;
+				}
+
+				// close node
+				else if (!strcmp(tokenizer.token, "}")) {
+
+					if (level) {
+						node = node->parentNode;
+						parent = node->parentNode;
+						level--;
+						argnum = 0;
+						newChild = true;
+					}
+				}
+
+				else {
+					if (!argnum) {
+						if (newChild) {
+							tmpNode = node;
+							node = (*vdfTree)->CreateNode(parent);
+							(*vdfTree)->AppendNode(tmpNode, node);
+							newChild = false;
+						}
+						(*vdfTree)->SetKeyPair(node, tokenizer.token);
+					}
+					else {
+						(*vdfTree)->SetKeyPair(node, NULL, tokenizer.token);
+						newChild = true;
+						if (pfnParse != NULL)
+							retVal = (*pfnParse)(openFW->fwdid, openFW->mdFilename,
+								*vdfTree, node, level);
+					}
+					argnum++;
+				}
+				if (argnum == 1)
+					newChild = true;
+
+			}
+		}
+	}
+
+	if (argnum == 1 && pfnParse != NULL)
+		retVal = (*pfnParse)(openFW->fwdid, openFW->mdFilename, *vdfTree, node, level);
+
+	return true;
 
 }
 
