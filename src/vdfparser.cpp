@@ -731,7 +731,7 @@ bool VDFTokenizer::HasMoreTokens()
                 if(!insideQuotes && hasStarted)
                     break;
             }
-            else if(isspace(source[endpos])) {
+            else if(isspace((unsigned char) source[endpos])) {
                 if(hasStarted)
                     break;
             }
@@ -1223,6 +1223,62 @@ bool VDFTreeParser::SaveVDF(const char *filename, VDFTree *vdfTree)
 
     fclose(pFile);
     return true;
+}
+
+bool VDFTreeParser::SaveVDF(std::string& output, VDFTree* vdfTree) {
+	VDFNode *node;
+	int     level;
+	char    buffer[512];
+	char    tabs[128];
+	bool    rew;
+
+	node = vdfTree->rootNode;
+	level = 0;
+
+	if (node == NULL)
+		return false;
+
+	output.clear();
+	rew = false;
+	*buffer = '\0';
+
+	while (node) {
+		if (rew) {
+			if (level && !node->nextNode) {
+				level--;
+				TABFILL(tabs, level);
+				sprintf(buffer, "%s}\n", tabs);
+				node = node->parentNode;
+				output.append(buffer);
+				*buffer = '\0';
+				continue;
+			}
+			node = node->nextNode;
+			rew = false;
+			continue;
+		}
+		if (node->key && *(node->key)) {
+			TABFILL(tabs, level);
+			sprintf(buffer, "%s\"%s\"", tabs, node->key);
+			if (node->value && *(node->value))
+				sprintf(buffer + strlen(buffer), " \"%s\"\n", node->value);
+			else
+				strcat(buffer, "\n");
+		}
+		if (node->childNode) {
+			TABFILL(tabs, level);
+			level++;
+			node = node->childNode;
+			sprintf(buffer + strlen(buffer), "%s{\n", tabs);
+		}
+		else
+			rew = true;
+
+		output.append(buffer);
+		*buffer = '\0';
+	}
+
+	return true;
 }
 
 

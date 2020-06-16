@@ -158,6 +158,7 @@ public:
     static bool ParseVDF       (const char *filename, ParseForward *parseFW = NULL);
     static bool OpenVDF        (const char *filename, VDFTree **vdfTree, OpenForward *openFW = NULL);
     static bool SaveVDF        (const char *filename, VDFTree *vdfTree);
+	static bool SaveVDF(std::string& output, VDFTree* vdfTree);
 	static bool ReadFromMemory (const char *body, VDFTree **vdfTree, OpenForward *openFW = NULL);
 };
 
