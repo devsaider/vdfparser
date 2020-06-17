@@ -123,6 +123,7 @@ public:
 
 public:
     char *token;
+    bool isString;
 
 private:
     size_t pos;

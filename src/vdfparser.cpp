@@ -666,7 +666,6 @@ bool VDFTokenizer::HasMoreTokens() {
     bool insideQuotes;
     bool hasStarted;
 
-
     endpos = pos;
     insideQuotes = false;
     hasStarted = false;
@@ -715,6 +714,7 @@ bool VDFTokenizer::HasMoreTokens() {
         token = new char[length + 1];
         memcpy(token, (source + startpos), length);
         token[length] = '\0';
+        this->isString = *(char *) (source + startpos - 1) == '"' && *(char *) (source + endpos) == '"';
     }
     pos = endpos + 1;
     return token != NULL;
@@ -922,14 +922,12 @@ bool VDFTreeParser::OpenVDF(const char *filename, VDFTree **vdfTree, OpenForward
 
         while (tokenizer.HasMoreTokens()) {
             if ((len = strlen(tokenizer.token))) {
-
-
                 // block comments
-                if (tokenizer.token[0] == '/' && tokenizer.token[1] == '/')
+                if (!tokenizer.isString && (tokenizer.token[0] == '/' && tokenizer.token[1] == '/'))
                     break;
 
                     // open node
-                else if (!strcmp(tokenizer.token, "{")) {
+                else if (!tokenizer.isString && !strcmp(tokenizer.token, "{")) {
 
                     parent = node;
                     node = (*vdfTree)->CreateNode();
@@ -941,7 +939,7 @@ bool VDFTreeParser::OpenVDF(const char *filename, VDFTree **vdfTree, OpenForward
                 }
 
                     // close node
-                else if (!strcmp(tokenizer.token, "}")) {
+                else if (!tokenizer.isString && !strcmp(tokenizer.token, "}")) {
 
                     if (level) {
                         node = node->parentNode;
@@ -1042,14 +1040,12 @@ bool VDFTreeParser::ReadFromMemory(const char *body, VDFTree **vdfTree, OpenForw
 
         while (tokenizer.HasMoreTokens()) {
             if ((len = strlen(tokenizer.token))) {
-
-
                 // block comments
-                if (tokenizer.token[0] == '/' && tokenizer.token[1] == '/')
+                if (!tokenizer.isString && tokenizer.token[0] == '/' && tokenizer.token[1] == '/')
                     break;
 
                     // open node
-                else if (!strcmp(tokenizer.token, "{")) {
+                else if (!tokenizer.isString && !strcmp(tokenizer.token, "{")) {
 
                     parent = node;
                     node = (*vdfTree)->CreateNode();
@@ -1061,7 +1057,7 @@ bool VDFTreeParser::ReadFromMemory(const char *body, VDFTree **vdfTree, OpenForw
                 }
 
                     // close node
-                else if (!strcmp(tokenizer.token, "}")) {
+                else if (!tokenizer.isString && !strcmp(tokenizer.token, "}")) {
 
                     if (level) {
                         node = node->parentNode;
